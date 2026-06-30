@@ -20,7 +20,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: siddsachar/row-bot
-          ref: ${{ vars.ROW_BOT_REF || 'feat/plugin-system-v2' }}
+          ref: ${{ vars.ROW_BOT_REF || 'main' }}
           token: ${{ secrets.ROW_BOT_SOURCE_TOKEN || github.token }}
           path: row-bot
 

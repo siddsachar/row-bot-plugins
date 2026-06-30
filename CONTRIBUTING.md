@@ -14,12 +14,11 @@ Code/
   row-bot-plugins/
 ```
 
-Use the Row-Bot checkout that contains Plugin System v2. While the feature is
-landing, that is `feat/plugin-system-v2`; after merge, use `main`.
+Use the Row-Bot `main` checkout, which includes Plugin System v2.
 
 ```powershell
 cd "$env:USERPROFILE\Code\row-bot"
-git checkout feat/plugin-system-v2
+git checkout main
 uv sync --locked --all-extras --group test
 $env:ROW_BOT_SOURCE = "$env:USERPROFILE\Code\row-bot"
 ```

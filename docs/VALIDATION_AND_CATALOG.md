@@ -109,7 +109,7 @@ Open Settings -> Plugins -> Plugin Marketplace. Install the plugin and verify:
 
 ## GitHub Actions
 
-The validation workflow checks this repo with Row-Bot. Until Plugin System v2 is
-merged to Row-Bot `main`, set the repository variable `ROW_BOT_REF` to
-`feat/plugin-system-v2`. If Row-Bot is private, add a `ROW_BOT_SOURCE_TOKEN`
-secret that can read `siddsachar/row-bot`.
+The validation workflow checks this repo with Row-Bot `main`. Leave the
+repository variable `ROW_BOT_REF` unset or set it to `main`. If Row-Bot is
+private, add a `ROW_BOT_SOURCE_TOKEN` secret that can read
+`siddsachar/row-bot`.

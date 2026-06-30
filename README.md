@@ -22,7 +22,7 @@ $Workspace = "$env:USERPROFILE\Code"
 git clone https://github.com/siddsachar/row-bot.git "$Workspace\row-bot"
 git clone https://github.com/siddsachar/row-bot-plugins.git "$Workspace\row-bot-plugins"
 cd "$Workspace\row-bot"
-git checkout feat/plugin-system-v2
+git checkout main
 uv sync --locked --all-extras --group test
 ```
 
