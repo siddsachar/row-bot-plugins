@@ -51,7 +51,7 @@
       ],
       "path": "plugins/microsoft-teams-channel",
       "archive_url": "",
-      "checksum": "sha256:7b34276459d8ba1c2498f013f99cee9b111f14ce1447b8a9f4147c9fe8f1e193",
+      "checksum": "sha256:b20cecdbb4cf67dc6cf9322936610400878fba68f5fdafd01d252dc1746faa53",
       "provides": {
         "native_tools": 0,
         "mcp_servers": 0,
