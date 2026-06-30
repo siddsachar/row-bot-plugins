@@ -1,0 +1,136 @@
+{
+  "schema_version": 2,
+  "id": "microsoft-teams-channel",
+  "name": "Microsoft Teams Channel",
+  "version": "0.1.0",
+  "min_row_bot_version": "0.0.0",
+  "author": {"name": "Row-Bot", "github": "siddsachar"},
+  "description": "Connect Row-Bot to Microsoft Teams as a bot channel.",
+  "long_description": "Receive and send Microsoft Teams bot messages through Row-Bot, including streaming-style updates, approvals, pairing, slash commands, and supported personal-chat attachments.",
+  "icon": "groups",
+  "license": "Apache-2.0",
+  "tags": ["channel", "teams", "microsoft", "messaging", "productivity"],
+  "homepage": "https://github.com/siddsachar/row-bot-plugins",
+  "repository": "https://github.com/siddsachar/row-bot-plugins",
+  "provides": {
+    "native_tools": [],
+    "mcp_servers": [],
+    "channels": [{"id": "teams"}],
+    "skills": [
+      {
+        "id": "teams_channel",
+        "path": "skills/teams_channel/SKILL.md"
+      }
+    ]
+  },
+  "permissions": ["network", "messaging", "external_send", "account", "files"],
+  "settings": {
+    "bot_app_id": {
+      "type": "text",
+      "label": "Microsoft App ID",
+      "description": "Application/client ID for the Azure Bot or Microsoft 365 app bot.",
+      "required": true
+    },
+    "authority_tenant": {
+      "type": "text",
+      "label": "Token Authority Tenant",
+      "description": "Use botframework.com for multi-tenant Bot Framework bots, or your tenant ID for single-tenant apps.",
+      "default": "botframework.com",
+      "required": true
+    },
+    "allowed_tenant_ids": {
+      "type": "textarea",
+      "label": "Allowed Teams Tenant IDs",
+      "description": "Optional newline-separated Microsoft Entra tenant IDs allowed to use this bot."
+    },
+    "auth_mode": {
+      "type": "select",
+      "label": "User Authorization Mode",
+      "description": "Controls which Teams users may talk to Row-Bot.",
+      "options": ["pairing", "single_user", "allowlist"],
+      "default": "pairing",
+      "required": true
+    },
+    "single_user_id": {
+      "type": "text",
+      "label": "Single Teams User ID",
+      "description": "Optional Teams user ID for single-user mode."
+    },
+    "default_target": {
+      "type": "text",
+      "label": "Default Conversation ID",
+      "description": "Optional Teams conversation ID used by generated send_teams_* tools."
+    },
+    "require_mention_in_channels": {
+      "type": "checkbox",
+      "label": "Require Mention In Channels",
+      "description": "Ignore team channel messages unless the bot is mentioned.",
+      "default": true
+    },
+    "enable_streaming": {
+      "type": "checkbox",
+      "label": "Enable Streaming Updates",
+      "description": "Send a placeholder and update it while Row-Bot works.",
+      "default": true
+    },
+    "stream_update_interval_seconds": {
+      "type": "number",
+      "label": "Streaming Update Interval Seconds",
+      "default": 1.5
+    },
+    "max_attachment_mb": {
+      "type": "number",
+      "label": "Max Attachment Size MB",
+      "default": 10
+    },
+    "auto_start_tunnel": {
+      "type": "checkbox",
+      "label": "Auto-start Row-Bot Tunnel",
+      "description": "When enabled, Row-Bot may start its configured tunnel to expose the Teams webhook.",
+      "default": false
+    },
+    "public_base_url": {
+      "type": "url",
+      "label": "Public Base URL",
+      "description": "Optional public Row-Bot URL if you manage your own tunnel or reverse proxy."
+    }
+  },
+  "secrets": {
+    "bot_client_secret": {
+      "type": "secret",
+      "label": "Bot Client Secret",
+      "description": "Client secret/password for the bot app registration.",
+      "required": true
+    }
+  },
+  "auth": {
+    "bot_connector": {
+      "type": "api_key",
+      "secret": "bot_client_secret"
+    }
+  },
+  "health_checks": [
+    {
+      "id": "required_settings",
+      "type": "required_settings",
+      "settings": ["bot_app_id", "authority_tenant", "auth_mode"]
+    },
+    {
+      "id": "required_secrets",
+      "type": "required_secrets",
+      "secrets": ["bot_client_secret"]
+    },
+    {
+      "id": "channel_configured",
+      "type": "channel_configured"
+    },
+    {
+      "id": "bot_connector_probe",
+      "type": "api_probe"
+    },
+    {
+      "id": "dry_run_send",
+      "type": "dry_run_send"
+    }
+  ]
+}
