@@ -4,32 +4,6 @@
   "source": "https://github.com/siddsachar/row-bot-plugins",
   "plugins": [
     {
-      "id": "fake-channel",
-      "name": "Fake Channel",
-      "version": "0.1.0",
-      "description": "In-memory channel plugin used for deterministic development tests.",
-      "author": {
-        "name": "Row-Bot",
-        "github": ""
-      },
-      "tags": [],
-      "path": "plugins/fake-channel",
-      "archive_url": "",
-      "checksum": "sha256:39f8cdd75ec302ee49f13342e1a943d5044b413e225bcfc83cb67c999951520b",
-      "provides": {
-        "native_tools": 0,
-        "mcp_servers": 0,
-        "channels": 1,
-        "skills": 0
-      },
-      "permissions": [
-        "messaging",
-        "external_send"
-      ],
-      "min_row_bot_version": "0.0.0",
-      "changelog_url": ""
-    },
-    {
       "id": "hacker-news",
       "name": "Hacker News Reader",
       "version": "1.0.0",
@@ -52,54 +26,6 @@
         "mcp_servers": 0,
         "channels": 0,
         "skills": 1
-      },
-      "permissions": [
-        "network"
-      ],
-      "min_row_bot_version": "0.0.0",
-      "changelog_url": ""
-    },
-    {
-      "id": "hello-tool",
-      "name": "Hello Tool",
-      "version": "0.1.0",
-      "description": "Small native plugin used for local development tests.",
-      "author": {
-        "name": "Row-Bot",
-        "github": ""
-      },
-      "tags": [],
-      "path": "plugins/hello-tool",
-      "archive_url": "",
-      "checksum": "sha256:2ca3b5a26d0895461913898acd9a43bace267520f2f65d92f3a140b74c87f251",
-      "provides": {
-        "native_tools": 1,
-        "mcp_servers": 0,
-        "channels": 0,
-        "skills": 0
-      },
-      "permissions": [],
-      "min_row_bot_version": "0.0.0",
-      "changelog_url": ""
-    },
-    {
-      "id": "mcp-backed-tool",
-      "name": "MCP Backed Tool",
-      "version": "0.1.0",
-      "description": "Example plugin that declares an MCP server.",
-      "author": {
-        "name": "Row-Bot",
-        "github": ""
-      },
-      "tags": [],
-      "path": "plugins/mcp-backed-tool",
-      "archive_url": "",
-      "checksum": "sha256:658a805b336bd558d4ff7f429ebacfebd245afed0fa1e611c104bc02db4b6ed8",
-      "provides": {
-        "native_tools": 0,
-        "mcp_servers": 1,
-        "channels": 0,
-        "skills": 0
       },
       "permissions": [
         "network"
@@ -134,32 +60,6 @@
       },
       "permissions": [
         "network"
-      ],
-      "min_row_bot_version": "0.0.0",
-      "changelog_url": ""
-    },
-    {
-      "id": "settings-secrets-tool",
-      "name": "Settings Secrets Tool",
-      "version": "0.1.0",
-      "description": "Example plugin that declares required settings and secrets.",
-      "author": {
-        "name": "Row-Bot",
-        "github": ""
-      },
-      "tags": [],
-      "path": "plugins/settings-secrets-tool",
-      "archive_url": "",
-      "checksum": "sha256:0c37aec84e5eb34154b381277d137fa18953fe403d30618f6e989382b9fc9dce",
-      "provides": {
-        "native_tools": 1,
-        "mcp_servers": 0,
-        "channels": 0,
-        "skills": 0
-      },
-      "permissions": [
-        "network",
-        "account"
       ],
       "min_row_bot_version": "0.0.0",
       "changelog_url": ""
