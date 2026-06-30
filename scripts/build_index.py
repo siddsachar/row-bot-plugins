@@ -4,6 +4,10 @@ import argparse
 import json
 import sys
 
+from _bootstrap_row_bot import bootstrap
+
+bootstrap()
+
 from row_bot.plugins.devtools import build_index, write_index
 
 

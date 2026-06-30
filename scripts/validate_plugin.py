@@ -5,6 +5,10 @@ import json
 import sys
 from dataclasses import asdict
 
+from _bootstrap_row_bot import bootstrap
+
+bootstrap()
+
 from row_bot.plugins.devtools import validate_plugin_path
 
 
