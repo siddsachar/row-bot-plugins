@@ -34,6 +34,41 @@
       "changelog_url": ""
     },
     {
+      "id": "microsoft-teams-channel",
+      "name": "Microsoft Teams Channel",
+      "version": "0.1.0",
+      "description": "Connect Row-Bot to Microsoft Teams as a bot channel.",
+      "author": {
+        "name": "Row-Bot",
+        "github": "siddsachar"
+      },
+      "tags": [
+        "channel",
+        "teams",
+        "microsoft",
+        "messaging",
+        "productivity"
+      ],
+      "path": "plugins/microsoft-teams-channel",
+      "archive_url": "",
+      "checksum": "sha256:7b34276459d8ba1c2498f013f99cee9b111f14ce1447b8a9f4147c9fe8f1e193",
+      "provides": {
+        "native_tools": 0,
+        "mcp_servers": 0,
+        "channels": 1,
+        "skills": 1
+      },
+      "permissions": [
+        "network",
+        "messaging",
+        "external_send",
+        "account",
+        "files"
+      ],
+      "min_row_bot_version": "0.0.0",
+      "changelog_url": ""
+    },
+    {
       "id": "rss-reader",
       "name": "RSS Reader",
       "version": "1.0.0",
