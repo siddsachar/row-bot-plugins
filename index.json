@@ -46,7 +46,7 @@
       ],
       "path": "plugins/hacker-news",
       "archive_url": "",
-      "checksum": "sha256:acd24090912995d2d156234cc8eb39d8a8a41a6ab45c63ec752281953ccd2e7e",
+      "checksum": "sha256:daaba055c183558fb4727ab2d830d142175dac7b700d3395785782e2d62d992e",
       "provides": {
         "native_tools": 1,
         "mcp_servers": 0,
@@ -125,7 +125,7 @@
       ],
       "path": "plugins/rss-reader",
       "archive_url": "",
-      "checksum": "sha256:d2e53d21e213bec7490cc8d260c204acb5b09142298e7b75d03a3409b549514e",
+      "checksum": "sha256:609e4ba97d9ef8c9d1952aa16924dcae66b2645b6cdf0ddc3c7d18231bf6ad1f",
       "provides": {
         "native_tools": 1,
         "mcp_servers": 0,
