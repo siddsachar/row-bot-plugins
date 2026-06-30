@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "rss-reader",
+  "name": "RSS Reader",
+  "version": "1.0.0",
+  "min_row_bot_version": "0.0.0",
+  "author": {"name": "Row-Bot", "github": "siddsachar"},
+  "description": "Subscribe to and read RSS and Atom feeds from Row-Bot.",
+  "long_description": "Add RSS and Atom feeds to Row-Bot and let the agent fetch the latest articles for you. Manage subscriptions with add, remove, and list commands, then pull new entries from one feed or all feeds at once.",
+  "icon": "rss_feed",
+  "license": "Apache-2.0",
+  "tags": ["rss", "atom", "feeds", "news", "reading"],
+  "homepage": "https://github.com/siddsachar/row-bot-plugins",
+  "repository": "https://github.com/siddsachar/row-bot-plugins",
+  "provides": {
+    "native_tools": [{"id": "rss_reader", "entrypoint": "plugin_main.py"}],
+    "mcp_servers": [],
+    "channels": [],
+    "skills": [
+      {
+        "id": "rss_reader",
+        "path": "skills/rss_reader/SKILL.md"
+      }
+    ]
+  },
+  "permissions": ["network"],
+  "settings": {
+    "default_count": {
+      "type": "number",
+      "label": "Default number of entries",
+      "description": "How many feed entries to fetch per request (1-30).",
+      "default": 10,
+      "required": false
+    }
+  },
+  "secrets": {},
+  "auth": {},
+  "health_checks": []
+}

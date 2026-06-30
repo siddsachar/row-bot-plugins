@@ -1,0 +1,39 @@
+{
+  "schema_version": 2,
+  "id": "hacker-news",
+  "name": "Hacker News Reader",
+  "version": "1.0.0",
+  "min_row_bot_version": "0.0.0",
+  "author": {"name": "Row-Bot", "github": "siddsachar"},
+  "description": "Browse and search Hacker News top stories, new posts, and discussions.",
+  "long_description": "Access Hacker News directly from Row-Bot. Browse the front page, discover new posts, search the HN archive via Algolia, and read story details with top comments. No API key is required.",
+  "icon": "newspaper",
+  "license": "Apache-2.0",
+  "tags": ["news", "tech", "hacker-news", "search"],
+  "homepage": "https://github.com/siddsachar/row-bot-plugins",
+  "repository": "https://github.com/siddsachar/row-bot-plugins",
+  "provides": {
+    "native_tools": [{"id": "hacker_news", "entrypoint": "plugin_main.py"}],
+    "mcp_servers": [],
+    "channels": [],
+    "skills": [
+      {
+        "id": "hacker_news_reader",
+        "path": "skills/hacker_news_reader/SKILL.md"
+      }
+    ]
+  },
+  "permissions": ["network"],
+  "settings": {
+    "default_count": {
+      "type": "number",
+      "label": "Default number of stories",
+      "description": "How many stories to fetch per request (1-30).",
+      "default": 10,
+      "required": false
+    }
+  },
+  "secrets": {},
+  "auth": {},
+  "health_checks": []
+}

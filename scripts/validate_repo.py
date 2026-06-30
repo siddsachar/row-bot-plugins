@@ -120,7 +120,7 @@ def _read_json(path: Path) -> dict[str, Any]:
 def _scan_sensitive_text(root: Path) -> list[str]:
     errors: list[str] = []
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or ".git" in path.parts:
+        if not path.is_file() or ".git" in path.parts or ".local" in path.parts:
             continue
         rel = path.relative_to(root).as_posix()
         try:
