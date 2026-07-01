@@ -72,13 +72,17 @@ row-bot-plugins/
 
 1. Copy the closest template from `templates/` into `plugins/<plugin-id>/`.
 2. Rename ids, labels, descriptions, and tool/channel names.
-3. Declare every setting, secret, auth flow, permission, and health check in
+3. Define a small first MVP. Prefer read-only or draft-only behavior until the
+   setup, auth, tests, permissions, and approval gates are clear.
+4. Declare every setting, secret, auth flow, permission, and health check in
    `plugin.json`.
-4. Implement only supported surfaces.
-5. Validate the plugin and the whole repo.
-6. Rebuild `index.json`.
-7. Test local install from the marketplace catalog.
-8. Open a PR with the checklist in `.github/pull_request_template.md`.
+5. Add a plugin README that explains setup, provider scopes, manual/live checks,
+   safety behavior, and known limitations.
+6. Implement only supported surfaces.
+7. Validate the plugin and the whole repo.
+8. Rebuild `index.json`.
+9. Test local install from the marketplace catalog.
+10. Open a PR with the checklist in `.github/pull_request_template.md`.
 
 Detailed instructions live in [docs/PLUGIN_AUTHOR_GUIDE.md](docs/PLUGIN_AUTHOR_GUIDE.md).
 
@@ -92,6 +96,8 @@ Detailed instructions live in [docs/PLUGIN_AUTHOR_GUIDE.md](docs/PLUGIN_AUTHOR_G
   NiceGUI panels, memory providers, workflow triggers, or general hooks.
 - Do not install plugin dependencies into Row-Bot's main environment.
 - Prefer deterministic fakes, dry-run modes, and local fixtures.
+- Make external-send, delete, publish, payment, refund, permission, and other
+  mutate operations approval-aware before exposing them to agents.
 - Update `index.json` in the same PR as plugin changes.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md) before

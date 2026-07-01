@@ -39,6 +39,10 @@ This checks:
 - Supported permissions, settings, and auth types
 - Basic plugin code import/security rules
 
+It does not prove that a live provider account, OAuth app, webhook endpoint, or
+external channel works. Cover those with README manual/live checks and local
+marketplace smoke testing.
+
 ## Validate The Whole Repo
 
 ```powershell
@@ -52,6 +56,11 @@ This checks:
 - `index.json` matches generated plugin metadata and checksums
 - No obvious private local paths or secret-like tokens in tracked text files
 - Required docs and scripts are present
+
+The repo scan is a safety net, not permission to commit sensitive data. Review
+plugin README files, tests, fixtures, and examples manually for real messages,
+customer data, provider responses, tokens, account IDs, tenant IDs, local paths,
+and logs before opening a PR.
 
 Use JSON output when another tool needs to consume results:
 
@@ -104,8 +113,16 @@ Open Settings -> Plugins -> Plugin Marketplace. Install the plugin and verify:
 
 - It installs disabled.
 - Plugin Center renders metadata and setup.
-- Test and Enable behave correctly.
+- Missing setup fails clearly.
+- Test and Enable behave correctly after setup is configured.
 - Disable removes plugin-owned tools, MCP tools, skills, and channels.
+- Permissions, auth, settings, secrets, health checks, logs, and docs are clear.
+- External-send or destructive operations request approval before they send,
+  delete, publish, charge, refund, change permissions, or mutate provider data.
+
+For plugins with optional live checks, run them only with test accounts,
+throwaway workspaces, sandbox stores, or provider test modes. Record the command
+or manual steps and result in the PR template.
 
 ## GitHub Actions
 
