@@ -2,7 +2,7 @@
   "schema_version": 2,
   "id": "microsoft-teams-channel",
   "name": "Microsoft Teams Channel",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "min_row_bot_version": "0.0.0",
   "author": {"name": "Row-Bot", "github": "siddsachar"},
   "description": "Connect Row-Bot to Microsoft Teams as a bot channel.",
