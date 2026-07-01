@@ -5,6 +5,8 @@
 - Plugin id:
 - Surface: native tool / MCP-backed tool / channel / bundled skill
 - User-facing purpose:
+- MVP scope:
+- Explicitly out of scope:
 
 ## Validation
 
@@ -26,15 +28,27 @@ Commands and results:
 - Required settings:
 - Required secrets:
 - Auth flow:
+- Provider account/app setup:
+- OAuth scopes or channel scopes:
 - Health checks:
+- External-send/destructive operations:
 
 ## Safety
 
 - [ ] No secrets, tokens, private paths, real user data, or generated logs
+- [ ] Fixtures/examples do not contain copied provider responses or real
+      customer/account/message data
 - [ ] No hidden network calls or telemetry
 - [ ] Default tests/validation are deterministic and offline
 - [ ] External-send or destructive actions are approval-aware
 - [ ] No arbitrary custom UI
+
+## Documentation
+
+- [ ] Plugin README explains setup, scopes, permissions, dry-run/test behavior,
+      manual/live checks, and known limitations
+- [ ] User-facing descriptions are clear in `plugin.json`
+- [ ] `index.json` was regenerated after plugin changes
 
 ## Manual Or Live Checks
 

@@ -111,6 +111,22 @@ Supported permissions:
 Declare the smallest accurate set. Permissions are user-facing; write labels
 and descriptions so reviewers can explain what the plugin needs.
 
+Use permissions for what the MVP actually does, not everything the provider API
+could do. Common mappings:
+
+- `network`: calls an external provider, downloads remote data, or runs a
+  networked MCP server.
+- `files`: reads, writes, uploads, downloads, or processes files or
+  attachments.
+- `account`: accesses provider account identity, OAuth, tenant, workspace, or
+  user-specific data.
+- `external_send`: sends, publishes, posts, emails, messages, invites, charges,
+  refunds, or otherwise affects people or systems outside Row-Bot.
+- `messaging`: acts as a channel or handles inbound/outbound chat messages.
+- `memory_documents`: reads or writes Row-Bot memory or document stores.
+- `shell_processes`: starts or manages subprocesses beyond normal in-process
+  Python tool code.
+
 ## Settings And Secrets
 
 Supported field types:
@@ -182,6 +198,10 @@ Example:
 OAuth and device-code flows should declare provider URLs and scopes, but default
 tests must not call live providers.
 
+Auth entries are declarations for Plugin Center and reviewers; they are not a
+place to store credentials. Put real values only in Row-Bot's settings or secret
+store during local testing.
+
 ## Health Checks
 
 Recommended deterministic checks:
@@ -214,3 +234,9 @@ Recommended deterministic checks:
 Manual/live checks may be declared for user visibility, but they must remain
 non-blocking for deterministic validation unless Row-Bot explicitly supports a
 local fake.
+
+Health check IDs should be stable and descriptive. Keep required setup checks
+local, such as required settings, required secrets, channel declaration, or MCP
+launch configuration. Provider API probes, OAuth refreshes, dry-run sends, and
+webhook delivery checks belong in README manual/live steps unless Row-Bot has a
+deterministic fake for them.
