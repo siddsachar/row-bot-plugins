@@ -2,7 +2,7 @@
   "schema_version": 2,
   "id": "asana-projects",
   "name": "Asana Projects",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "min_row_bot_version": "0.0.0",
   "author": {"name": "Venky1209", "github": "Venky1209"},
   "description": "Browse Asana workspaces, projects, and tasks, summarize blockers, and create tasks with approval.",

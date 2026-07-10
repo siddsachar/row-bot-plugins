@@ -124,18 +124,6 @@ class TestQueryParser(unittest.TestCase):
         self.assertEqual(action, "list_workspaces")
         self.assertEqual(params["count"], 5)
 
-    def test_list_projects_with_workspace(self):
-        action, params = self.module._parse_query("list_projects 123 5", 10)
-        self.assertEqual(action, "list_projects")
-        self.assertEqual(params["workspace"], "123")
-        self.assertEqual(params["count"], 5)
-
-    def test_list_projects_without_workspace(self):
-        action, params = self.module._parse_query("list_projects", 10)
-        self.assertEqual(action, "list_projects")
-        self.assertEqual(params["workspace"], "")
-        self.assertEqual(params["count"], 10)
-
     def test_list_tasks_requires_gid(self):
         self.assertEqual(self.module._parse_query("list_tasks", 10)[0], "error")
         self.assertEqual(self.module._parse_query("list_tasks abc", 10)[0], "error")
@@ -171,6 +159,46 @@ class TestQueryParser(unittest.TestCase):
         self.assertEqual(self.module._parse_query("list_tasks 5 0", 10)[1]["count"], 1)
 
 
+class TestListProjectsGrammar(unittest.TestCase):
+    """Explicit grammar: first arg is always the workspace (gid or 'default')."""
+
+    def setUp(self):
+        self.module = _load_module()
+
+    def test_no_args_uses_default(self):
+        action, params = self.module._parse_query("list_projects", 10)
+        self.assertEqual(action, "list_projects")
+        self.assertEqual(params["workspace"], "")
+        self.assertEqual(params["count"], 10)
+
+    def test_default_keyword(self):
+        action, params = self.module._parse_query("list_projects default", 10)
+        self.assertEqual(action, "list_projects")
+        self.assertEqual(params["workspace"], "")
+
+    def test_default_keyword_with_count(self):
+        action, params = self.module._parse_query("list_projects default 7", 10)
+        self.assertEqual(params["workspace"], "")
+        self.assertEqual(params["count"], 7)
+
+    def test_gid_only_is_workspace_not_count(self):
+        # The whole point: "list_projects 5" means workspace 5, NOT five projects.
+        action, params = self.module._parse_query("list_projects 5", 10)
+        self.assertEqual(action, "list_projects")
+        self.assertEqual(params["workspace"], "5")
+        self.assertEqual(params["count"], 10)
+
+    def test_gid_with_count(self):
+        action, params = self.module._parse_query("list_projects 123 5", 10)
+        self.assertEqual(params["workspace"], "123")
+        self.assertEqual(params["count"], 5)
+
+    def test_invalid_workspace_is_rejected(self):
+        action, params = self.module._parse_query("list_projects abc", 10)
+        self.assertEqual(action, "error")
+        self.assertIn("Invalid workspace", params["message"])
+
+
 class TestFormatting(unittest.TestCase):
     def setUp(self):
         self.module = _load_module()
@@ -184,37 +212,145 @@ class TestFormatting(unittest.TestCase):
         self.assertIn("Assignee: Ada", text)
         self.assertIn("Due: 2026-08-01", text)
 
+    def test_format_task_shows_due_at(self):
+        task = {"gid": "2", "name": "Timed", "completed": False,
+                "due_at": "2026-08-01T17:00:00.000Z"}
+        text = self.module._format_task(task)
+        self.assertIn("Due: 2026-08-01T17:00:00.000Z", text)
+
     def test_format_task_completed(self):
         task = {"gid": "2", "name": "Done thing", "completed": True}
         self.assertIn("[x]", self.module._format_task(task))
 
-    def test_format_project(self):
+    def test_format_project_uses_status_update(self):
         project = {"gid": "9", "name": "Website", "archived": False,
-                   "current_status": {"text": "On track"}}
+                   "current_status_update": {"text": "On track"}}
         text = self.module._format_project(project)
         self.assertIn("**Website**", text)
         self.assertIn("Status: On track", text)
 
-    def test_summarize_blockers_buckets(self):
+
+class TestDueDateHandling(unittest.TestCase):
+    def setUp(self):
+        self.module = _load_module()
+
+    def test_parse_due_on(self):
+        self.assertEqual(self.module._parse_due_on("2026-08-01").isoformat(), "2026-08-01")
+        self.assertIsNone(self.module._parse_due_on(None))
+        self.assertIsNone(self.module._parse_due_on("not-a-date"))
+
+    def test_parse_due_at_returns_local_date(self):
+        # Any valid timestamp resolves to a local calendar date.
+        d = self.module._parse_due_at("2026-08-01T12:00:00.000Z")
+        self.assertIsNotNone(d)
+        self.assertIsNone(self.module._parse_due_at(None))
+        self.assertIsNone(self.module._parse_due_at("garbage"))
+
+    def test_task_due_date_prefers_due_at(self):
+        task = {"due_on": "2026-08-01", "due_at": "2030-01-01T00:00:00.000Z"}
+        self.assertEqual(self.module._task_due_date(task).year, 2030)
+
+    def test_blockers_classifies_both_due_forms(self):
         tasks = [
-            {"gid": "1", "name": "Overdue", "completed": False, "due_on": "2000-01-01"},
-            {"gid": "2", "name": "Future", "completed": False, "due_on": "2999-01-01",
-             "assignee": {"name": "Bo"}},
-            {"gid": "3", "name": "No due", "completed": False},
-            {"gid": "4", "name": "Completed", "completed": True},
+            {"gid": "1", "name": "OverdueOn", "completed": False, "due_on": "2000-01-01"},
+            {"gid": "2", "name": "FutureOn", "completed": False, "due_on": "2999-01-01"},
+            {"gid": "3", "name": "OverdueAt", "completed": False,
+             "due_at": "2000-01-01T12:00:00.000Z"},
+            {"gid": "4", "name": "FutureAt", "completed": False,
+             "due_at": "2999-01-01T12:00:00.000Z"},
+            {"gid": "5", "name": "NoDue", "completed": False},
         ]
         summary = self.module._summarize_blockers(tasks)
-        self.assertIn("Open tasks: 3", summary)
-        self.assertIn("Overdue: 1", summary)
-        self.assertIn("Upcoming (has due date): 1", summary)
+        self.assertIn("Open tasks: 5", summary)
+        self.assertIn("Overdue: 2", summary)
+        self.assertIn("Upcoming (has due date): 2", summary)
         self.assertIn("No due date: 1", summary)
-        self.assertIn("Unassigned: 2", summary)
-        self.assertIn("**Overdue**", summary)
 
-    def test_parse_due_handles_bad_input(self):
-        self.assertIsNone(self.module._parse_due(None))
-        self.assertIsNone(self.module._parse_due("not-a-date"))
-        self.assertEqual(self.module._parse_due("2026-08-01").isoformat(), "2026-08-01")
+
+class TestBlockersSummary(unittest.TestCase):
+    def setUp(self):
+        self.module = _load_module()
+
+    def test_partial_label(self):
+        tasks = [{"gid": "1", "name": "x", "completed": False, "due_on": "2000-01-01"}]
+        summary = self.module._summarize_blockers(tasks, partial=True)
+        self.assertIn("partial", summary.lower())
+
+    def test_overdue_list_truncated(self):
+        tasks = [
+            {"gid": str(i), "name": f"T{i}", "completed": False, "due_on": "2000-01-01"}
+            for i in range(25)
+        ]
+        summary = self.module._summarize_blockers(tasks)
+        self.assertIn("Overdue: 25", summary)
+        self.assertIn("5 more overdue", summary)  # 25 - 20 shown
+
+
+class TestTypeaheadRequest(unittest.TestCase):
+    """Assert the ACTUAL provider request, not a mock of _search_tasks."""
+
+    def setUp(self):
+        self.module = _load_module()
+
+    def test_search_calls_typeahead_with_name_only(self):
+        captured = {}
+
+        def fake(method, path, token, **kwargs):
+            captured["method"] = method
+            captured["path"] = path
+            captured["params"] = kwargs.get("params")
+            return {"data": [{"gid": "1", "name": "Onboard client"}]}
+
+        with patch.object(self.module, "_api_request", side_effect=fake):
+            tasks = self.module._search_tasks("555", "onboard", 5, "tok")
+
+        self.assertEqual(tasks[0]["name"], "Onboard client")
+        self.assertEqual(captured["method"], "GET")
+        self.assertEqual(captured["path"], "/workspaces/555/typeahead")
+        params = captured["params"]
+        self.assertEqual(params["resource_type"], "task")
+        self.assertEqual(params["query"], "onboard")
+        self.assertEqual(params["count"], 5)
+        self.assertEqual(params["opt_fields"], "name")
+
+
+class TestBlockersPagination(unittest.TestCase):
+    def setUp(self):
+        self.module = _load_module()
+
+    def test_follows_offset_across_two_pages(self):
+        pages = [
+            {"data": [{"gid": "1", "name": "A", "completed": False}],
+             "next_page": {"offset": "OFFSET_2"}},
+            {"data": [{"gid": "2", "name": "B", "completed": False}],
+             "next_page": None},
+        ]
+        offsets_seen = []
+
+        def fake(method, path, token, **kwargs):
+            params = kwargs.get("params", {})
+            offsets_seen.append(params.get("offset"))
+            return pages[len(offsets_seen) - 1]
+
+        with patch.object(self.module, "_api_request", side_effect=fake):
+            tasks, partial = self.module._project_open_tasks("900", "tok")
+
+        self.assertEqual([t["gid"] for t in tasks], ["1", "2"])  # both pages contribute
+        self.assertFalse(partial)
+        self.assertIsNone(offsets_seen[0])          # first page: no offset
+        self.assertEqual(offsets_seen[1], "OFFSET_2")  # second page: offset passed through
+
+    def test_cap_marks_partial(self):
+        # Every page reports another page -> cap reached -> partial True.
+        def fake(method, path, token, **kwargs):
+            return {"data": [{"gid": "1", "name": "x", "completed": False}],
+                    "next_page": {"offset": "MORE"}}
+
+        with patch.object(self.module, "_api_request", side_effect=fake):
+            tasks, partial = self.module._project_open_tasks("900", "tok")
+
+        self.assertTrue(partial)
+        self.assertEqual(len(tasks), self.module._MAX_BLOCKER_PAGES)
 
 
 class TestReadRunnersMocked(unittest.TestCase):
@@ -234,7 +370,7 @@ class TestReadRunnersMocked(unittest.TestCase):
         self.assertIn("No tasks found in project 900", result)
 
     def test_run_search_tasks(self):
-        fake = [{"gid": "5", "name": "Onboard client", "completed": False}]
+        fake = [{"gid": "5", "name": "Onboard client"}]
         with patch.object(self.module, "_search_tasks", return_value=fake):
             result = self.module._run_search_tasks("123", "onboard", 10, "tok")
         self.assertIn("Found 1 task(s)", result)
@@ -246,9 +382,15 @@ class TestReadRunnersMocked(unittest.TestCase):
         self.assertIn("Could not find task with GID 999", result)
 
     def test_run_blockers_none_open(self):
-        with patch.object(self.module, "_project_open_tasks", return_value=[]):
+        with patch.object(self.module, "_project_open_tasks", return_value=([], False)):
             result = self.module._run_blockers("55", "tok")
         self.assertIn("Nothing is blocking", result)
+
+    def test_run_blockers_partial_forwarded(self):
+        tasks = [{"gid": "1", "name": "x", "completed": False, "due_on": "2000-01-01"}]
+        with patch.object(self.module, "_project_open_tasks", return_value=(tasks, True)):
+            result = self.module._run_blockers("55", "tok")
+        self.assertIn("partial", result.lower())
 
 
 class TestReadExecute(unittest.TestCase):
@@ -276,6 +418,22 @@ class TestReadExecute(unittest.TestCase):
             result = self.tool.execute("list_tasks 900 5")
         self.assertEqual(result, "ok")
         mock.assert_called_once_with("900", 5, "tok")
+
+    def test_list_projects_default_uses_configured_workspace(self):
+        with patch.object(self.module, "_run_list_projects", return_value="ok") as mock:
+            self.tool.execute("list_projects")
+        mock.assert_called_once_with("555", 10, "tok")
+
+    def test_list_projects_explicit_gid_overrides_default(self):
+        with patch.object(self.module, "_run_list_projects", return_value="ok") as mock:
+            self.tool.execute("list_projects 999")
+        mock.assert_called_once_with("999", 10, "tok")
+
+    def test_list_projects_no_default_configured_errors(self):
+        self.api.get_config.side_effect = lambda key, default=None: {
+            "default_count": 10,
+        }.get(key, default)
+        self.assertIn("No workspace GID", self.tool.execute("list_projects"))
 
     def test_search_uses_default_workspace(self):
         with patch.object(self.module, "_run_search_tasks", return_value="ok") as mock:
@@ -318,6 +476,21 @@ class TestCreateTask(unittest.TestCase):
             result = self.module._run_create_task("900", "New task", "tok")
         self.assertIn("Created task 'New task' in project 900 (gid: 7001)", result)
         mock.assert_called_once_with("900", "New task", "tok")
+
+    def test_create_task_request_shape(self):
+        captured = {}
+
+        def fake(method, path, token, **kwargs):
+            captured["method"] = method
+            captured["path"] = path
+            captured["body"] = kwargs.get("body")
+            return {"data": {"gid": "7001"}}
+
+        with patch.object(self.module, "_api_request", side_effect=fake):
+            self.module._create_task("900", "New task", "tok")
+        self.assertEqual(captured["method"], "POST")
+        self.assertEqual(captured["path"], "/tasks")
+        self.assertEqual(captured["body"], {"data": {"name": "New task", "projects": ["900"]}})
 
     def test_run_create_bad_usage(self):
         self.assertIn("Usage", self.module._run_create_task(None, "", "tok"))

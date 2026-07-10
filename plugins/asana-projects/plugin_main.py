@@ -11,14 +11,14 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import date, datetime, timezone
+from datetime import date, datetime
 from typing import Any, Callable
 
 from plugins.api import PluginTool
 
 _API_BASE = "https://app.asana.com/api/1.0"
 _REQUEST_TIMEOUT = 15
-_USER_AGENT = "Row-Bot-Asana-Projects-Plugin/0.1"
+_USER_AGENT = "Row-Bot-Asana-Projects-Plugin/0.2"
 
 _NO_TOKEN_MSG = (
     "Asana access token is not configured. Add an Asana Personal Access Token "
@@ -31,20 +31,30 @@ _NO_WORKSPACE_MSG = (
 )
 
 # opt_fields requested per read, kept minimal and non-sensitive.
-_PROJECT_FIELDS = "name,archived,current_status.text"
-_TASK_LIST_FIELDS = "name,completed,due_on,assignee.name"
+# Asana tasks may carry due_on (a floating calendar date) OR due_at (a UTC
+# timestamp for time-specific deadlines) — request both.
+_PROJECT_FIELDS = "name,archived,current_status_update.text"
+_TASK_LIST_FIELDS = "name,completed,due_on,due_at,assignee.name"
 _TASK_DETAIL_FIELDS = (
-    "name,notes,completed,completed_at,due_on,assignee.name,"
+    "name,notes,completed,completed_at,due_on,due_at,assignee.name,"
     "projects.name,permalink_url,num_subtasks"
 )
+
+# Blockers pagination: Asana pages default to 100; follow next_page.offset up to
+# this many pages, then stop and mark the result partial.
+_TASK_PAGE_LIMIT = 100
+_MAX_BLOCKER_PAGES = 20
+# How many overdue tasks to list in the blockers summary before truncating.
+_MAX_OVERDUE_SHOWN = 20
 
 _HELP_TEXT = (
     "Asana Projects (read). Commands:\n"
     "  list_workspaces [count]\n"
-    "  list_projects [workspace_gid] [count]  - workspace_gid optional if a "
-    "default workspace is set\n"
+    "  list_projects [<workspace_gid>|default] [count]  - omit or 'default' uses "
+    "the default workspace\n"
     "  list_tasks <project_gid> [count]\n"
-    "  search_tasks <query> [count]           - searches the default workspace\n"
+    "  search_tasks <query> [count]           - searches the default workspace "
+    "(names only)\n"
     "  task <task_gid>\n"
     "  blockers <project_gid>                 - summarize open tasks by due status\n"
     "A bare query without a command searches tasks in the default workspace."
@@ -73,10 +83,18 @@ def _is_gid(token: str) -> bool:
 
 
 def _today() -> date:
-    return datetime.now(timezone.utc).date()
+    """Local calendar 'today'.
+
+    Due-date policy: Asana due_on values are floating local calendar dates and
+    due_at values are absolute UTC timestamps. We resolve both to a LOCAL
+    calendar date and compare against this local today, so a task is 'overdue'
+    from the user's own-day perspective rather than UTC's.
+    """
+    return datetime.now().astimezone().date()
 
 
-def _parse_due(due_on: Any) -> date | None:
+def _parse_due_on(due_on: Any) -> date | None:
+    """Parse a floating due_on calendar date (YYYY-MM-DD)."""
     if not due_on or not isinstance(due_on, str):
         return None
     try:
@@ -85,7 +103,67 @@ def _parse_due(due_on: Any) -> date | None:
         return None
 
 
+def _parse_due_at(due_at: Any) -> date | None:
+    """Parse an absolute due_at timestamp and return its LOCAL calendar date."""
+    if not due_at or not isinstance(due_at, str):
+        return None
+    value = due_at.strip()
+    if value.endswith("Z"):
+        value = value[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(value)
+    except ValueError:
+        return None
+    if dt.tzinfo is not None:
+        dt = dt.astimezone()  # convert to local time
+    return dt.date()
+
+
+def _task_due_date(task: dict[str, Any]) -> date | None:
+    """Resolve a task's effective due date, preferring the precise due_at."""
+    at = _parse_due_at(task.get("due_at"))
+    if at is not None:
+        return at
+    return _parse_due_on(task.get("due_on"))
+
+
+def _format_due(task: dict[str, Any]) -> str:
+    """Human display of whichever due form the task carries."""
+    if task.get("due_at"):
+        return str(task["due_at"])
+    if task.get("due_on"):
+        return str(task["due_on"])
+    return ""
+
+
 # ── Read: parsing ────────────────────────────────────────────────────────────
+def _parse_list_projects(rest: str, default_count: int) -> tuple[str, dict[str, Any]]:
+    """Explicit grammar: the first token, if present, is ALWAYS the workspace
+    (a numeric GID or the literal 'default') — never a count. An invalid first
+    token is rejected instead of silently falling back to the default."""
+    tokens = rest.split()
+    if not tokens:
+        return "list_projects", {"workspace": "", "count": default_count}
+
+    first = tokens[0]
+    if first.lower() == "default":
+        workspace = ""  # empty => resolve to configured default at execute time
+    elif _is_gid(first):
+        workspace = first
+    else:
+        return "error", {
+            "message": (
+                f"Invalid workspace argument: {first}. "
+                "Usage: list_projects [<workspace_gid>|default] [count]"
+            )
+        }
+
+    count = default_count
+    if len(tokens) > 1 and tokens[1].isdigit():
+        count = _parse_int(tokens[1], default_count)
+    return "list_projects", {"workspace": workspace, "count": count}
+
+
 def _parse_query(query: str, default_count: int) -> tuple[str, dict[str, Any]]:
     query = (query or "").strip()
     if not query:
@@ -99,10 +177,7 @@ def _parse_query(query: str, default_count: int) -> tuple[str, dict[str, Any]]:
         return "list_workspaces", {"count": _parse_int(rest, default_count) if rest else default_count}
 
     if action == "list_projects":
-        text, count = _split_trailing_count(rest, default_count)
-        first = text.split()[0] if text else ""
-        workspace = first if _is_gid(first) else ""
-        return "list_projects", {"workspace": workspace, "count": count}
+        return _parse_list_projects(rest, default_count)
 
     if action == "list_tasks":
         if not rest:
@@ -156,7 +231,7 @@ def _format_project(project: dict[str, Any], index: int | None = None) -> str:
     lines = [f"{prefix}**{name}**  (gid: {project.get('gid', '')})"]
     if project.get("archived"):
         lines.append("   (archived)")
-    status = project.get("current_status") or {}
+    status = project.get("current_status_update") or {}
     if isinstance(status, dict) and status.get("text"):
         lines.append(f"   Status: {status['text']}")
     return "\n".join(lines)
@@ -170,8 +245,9 @@ def _format_task(task: dict[str, Any], index: int | None = None) -> str:
     assignee = task.get("assignee") or {}
     if isinstance(assignee, dict) and assignee.get("name"):
         lines.append(f"   Assignee: {assignee['name']}")
-    if task.get("due_on"):
-        lines.append(f"   Due: {task['due_on']}")
+    due = _format_due(task)
+    if due:
+        lines.append(f"   Due: {due}")
     return "\n".join(lines)
 
 
@@ -193,7 +269,7 @@ def _format_task_detail(task: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _summarize_blockers(tasks: list[dict[str, Any]]) -> str:
+def _summarize_blockers(tasks: list[dict[str, Any]], partial: bool = False) -> str:
     today = _today()
     overdue: list[dict] = []
     due_soon: list[dict] = []
@@ -205,7 +281,7 @@ def _summarize_blockers(tasks: list[dict[str, Any]]) -> str:
         assignee = task.get("assignee") or {}
         if not (isinstance(assignee, dict) and assignee.get("name")):
             unassigned += 1
-        due_date = _parse_due(task.get("due_on"))
+        due_date = _task_due_date(task)
         if due_date is None:
             no_due.append(task)
         elif due_date < today:
@@ -215,14 +291,23 @@ def _summarize_blockers(tasks: list[dict[str, Any]]) -> str:
 
     open_count = len(overdue) + len(due_soon) + len(no_due)
     lines = ["**Blockers summary**"]
+    if partial:
+        lines.append(
+            f"   (partial — task list was capped at {_MAX_BLOCKER_PAGES * _TASK_PAGE_LIMIT}; "
+            "counts are a lower bound)"
+        )
     lines.append(f"   Open tasks: {open_count}")
     lines.append(f"   Overdue: {len(overdue)}")
     lines.append(f"   Upcoming (has due date): {len(due_soon)}")
     lines.append(f"   No due date: {len(no_due)}")
     lines.append(f"   Unassigned: {unassigned}")
     if overdue:
+        shown = overdue[:_MAX_OVERDUE_SHOWN]
         lines.append("\nOverdue tasks:")
-        lines.append("\n".join(_format_task(t, index=i) for i, t in enumerate(overdue, 1)))
+        lines.append("\n".join(_format_task(t, index=i) for i, t in enumerate(shown, 1)))
+        omitted = len(overdue) - len(shown)
+        if omitted > 0:
+            lines.append(f"...and {omitted} more overdue task(s).")
     return "\n".join(lines)
 
 
@@ -260,6 +345,16 @@ def _data_list(payload: Any) -> list[dict[str, Any]]:
     return [r for r in payload.get("data", []) if isinstance(r, dict)]
 
 
+def _next_offset(payload: Any) -> str:
+    """Extract next_page.offset from an Asana response, or '' when exhausted."""
+    if not isinstance(payload, dict):
+        return ""
+    nxt = payload.get("next_page")
+    if isinstance(nxt, dict) and nxt.get("offset"):
+        return str(nxt["offset"])
+    return ""
+
+
 def _list_workspaces(count: int, token: str) -> list[dict[str, Any]]:
     payload = _api_request("GET", "/workspaces", token, params={"limit": count, "opt_fields": "name"})
     return _data_list(payload)
@@ -275,24 +370,49 @@ def _list_tasks(project: str, count: int, token: str) -> list[dict[str, Any]]:
     return _data_list(_api_request("GET", "/tasks", token, params=params))
 
 
-def _project_open_tasks(project: str, token: str) -> list[dict[str, Any]]:
-    """Fetch incomplete tasks for a project (for the blockers summary)."""
-    params = {
-        "project": project,
-        "completed_since": "now",
-        "limit": 100,
-        "opt_fields": _TASK_LIST_FIELDS,
-    }
-    return _data_list(_api_request("GET", "/tasks", token, params=params))
+def _project_open_tasks(project: str, token: str) -> tuple[list[dict[str, Any]], bool]:
+    """Fetch incomplete tasks for a project, following pagination.
+
+    Returns (tasks, partial). ``partial`` is True when the page cap was reached
+    while Asana still reported more pages, so the caller must present counts as a
+    lower bound rather than exact.
+    """
+    tasks: list[dict[str, Any]] = []
+    offset = ""
+    partial = False
+    for _ in range(_MAX_BLOCKER_PAGES):
+        params: dict[str, Any] = {
+            "project": project,
+            "completed_since": "now",
+            "limit": _TASK_PAGE_LIMIT,
+            "opt_fields": _TASK_LIST_FIELDS,
+        }
+        if offset:
+            params["offset"] = offset
+        payload = _api_request("GET", "/tasks", token, params=params)
+        tasks.extend(_data_list(payload))
+        offset = _next_offset(payload)
+        if not offset:
+            break
+    else:
+        # Loop ran the full cap without breaking; if Asana still had an offset
+        # there are more tasks we did not fetch.
+        if offset:
+            partial = True
+    return tasks, partial
 
 
 def _search_tasks(workspace: str, query: str, count: int, token: str) -> list[dict[str, Any]]:
-    """Task typeahead search (available on all Asana tiers)."""
+    """Task typeahead search (available on all Asana tiers).
+
+    Asana's typeahead endpoint only supports ``name`` as an optional field, so
+    that is all we request; results carry name + gid only.
+    """
     params = {
         "resource_type": "task",
         "query": query,
         "count": count,
-        "opt_fields": "name,completed,due_on,assignee.name",
+        "opt_fields": "name",
     }
     payload = _api_request("GET", f"/workspaces/{workspace}/typeahead", token, params=params)
     return _data_list(payload)
@@ -358,10 +478,10 @@ def _run_task_detail(task_gid: str, token: str) -> str:
 
 
 def _run_blockers(project: str, token: str) -> str:
-    tasks = _project_open_tasks(project, token)
+    tasks, partial = _project_open_tasks(project, token)
     if not tasks:
         return f"No open tasks in project {project}. Nothing is blocking."
-    return _summarize_blockers(tasks)
+    return _summarize_blockers(tasks, partial=partial)
 
 
 # ── Write: parsing / runner ──────────────────────────────────────────────────
@@ -451,7 +571,7 @@ class AsanaProjectsTool(_AsanaTool):
     def description(self) -> str:
         return (
             "Read Asana workspaces, projects, and tasks (read-only, no approval needed). "
-            "Commands: list_workspaces [count], list_projects [workspace_gid] [count], "
+            "Commands: list_workspaces [count], list_projects [<workspace_gid>|default] [count], "
             "list_tasks <project_gid> [count], search_tasks <query> [count], task <task_gid>, "
             "blockers <project_gid>. A bare query searches tasks in the default workspace."
         )

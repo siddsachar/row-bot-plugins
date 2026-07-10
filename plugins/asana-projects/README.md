@@ -21,8 +21,24 @@ create tasks with approval.
 - No comments, attachments, subtasks, custom fields, or section moves.
 - No OAuth — authentication is a Personal Access Token only (OAuth is future
   work).
-- Task search uses Asana **typeahead**, which matches on task names in one
-  workspace; it is not a full-text search across every field.
+- Task search uses Asana **typeahead**, which matches on task **names** in one
+  workspace (name field only) and is not a full-text search across every field.
+
+## Command Grammar Notes
+
+- **`list_projects [<workspace_gid>|default] [count]`** — the first argument is
+  always the workspace (a numeric GID or the literal `default`), never the
+  count. `list_projects 5` means workspace `5`; use `list_projects 5 20` for a
+  count. An invalid workspace argument is rejected rather than silently using
+  the default.
+- **`blockers <project_gid>`** — pages through *all* open tasks (following
+  Asana's `next_page.offset`) up to a safety cap. If the cap is hit the summary
+  is labelled **partial** and counts are a lower bound; the overdue list is
+  truncated to 20 with an omitted count.
+- **Due dates** — both `due_on` (all-day) and `due_at` (time-specific) are read
+  and shown. Classification resolves each to a **local** calendar date and
+  compares against the local "today", so a time-specific deadline is never
+  mis-counted as "no due date."
 
 ## Approval Model
 
@@ -110,4 +126,5 @@ Do not commit real tokens, GIDs, task names, or API responses from these checks.
   wait-and-retry message.
 - `search_tasks` relies on typeahead (name match, single workspace).
 - `list_tasks` requires a project GID; there is no cross-project task listing.
-- `current_status` on projects is shown only when Asana returns it.
+- A project's latest status (`current_status_update.text`) is shown only when
+  Asana returns it.

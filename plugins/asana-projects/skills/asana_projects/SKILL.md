@@ -8,7 +8,7 @@ tags:
   - projects
   - tasks
   - project-management
-version: "0.1"
+version: "0.2"
 author: Venky1209
 ---
 
@@ -41,15 +41,22 @@ Calendar tools for that.
 | Command | Example | Purpose |
 | --- | --- | --- |
 | `list_workspaces [N]` | `list_workspaces` | Find workspace GIDs. |
-| `list_projects [workspace_gid] [N]` | `list_projects 12000001` | List projects in a workspace. |
+| `list_projects [<workspace_gid>\|default] [N]` | `list_projects 12000001` | List projects in a workspace. |
 | `list_tasks <project_gid> [N]` | `list_tasks 12000045 20` | List tasks in a project. |
-| `search_tasks <query> [N]` | `search_tasks onboarding` | Search tasks in the default workspace. |
+| `search_tasks <query> [N]` | `search_tasks onboarding` | Search task **names** in the default workspace. |
 | `task <task_gid>` | `task 12000900` | Full detail for one task. |
 | `blockers <project_gid>` | `blockers 12000045` | Summarize open tasks by due status. |
 
-`workspace_gid` is optional for `list_projects` and `search_tasks` when a
-Default workspace GID is configured in Plugin Center. A bare query without a
-command searches tasks.
+For `list_projects`, the first argument is **always** the workspace — either a
+numeric GID or the literal `default` (or omit it) to use the configured default
+workspace. `list_projects 5` therefore means workspace `5`, not "five projects";
+put the count second: `list_projects 5 20` or `list_projects default 20`. An
+invalid workspace argument is rejected, not silently swapped for the default.
+`search_tasks` uses the default workspace and matches on task **names** only
+(Asana typeahead). A bare query without a command searches tasks. `blockers`
+counts every open task via pagination and marks the result "partial" if a very
+large project exceeds the safety cap; the overdue list is truncated with an
+omitted count.
 
 ## Create tool (approval-gated)
 

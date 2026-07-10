@@ -6,7 +6,7 @@
     {
       "id": "asana-projects",
       "name": "Asana Projects",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "description": "Browse Asana workspaces, projects, and tasks, summarize blockers, and create tasks with approval.",
       "author": {
         "name": "Venky1209",
@@ -21,7 +21,7 @@
       ],
       "path": "plugins/asana-projects",
       "archive_url": "",
-      "checksum": "sha256:8f125e2a6b5c499af1d1f854afe4a6ed37114da16db3a2c80debd29e80413e2d",
+      "checksum": "sha256:6a8f0ac66f7384dc1d54f6f28bcdcec9e57d392a3d042e7255258bc8366412ca",
       "provides": {
         "native_tools": 2,
         "mcp_servers": 0,
