@@ -4,6 +4,38 @@
   "source": "https://github.com/siddsachar/row-bot-plugins",
   "plugins": [
     {
+      "id": "asana-projects",
+      "name": "Asana Projects",
+      "version": "0.2.0",
+      "description": "Browse Asana workspaces, projects, and tasks, summarize blockers, and create tasks with approval.",
+      "author": {
+        "name": "Venky1209",
+        "github": "Venky1209"
+      },
+      "tags": [
+        "asana",
+        "projects",
+        "tasks",
+        "productivity",
+        "project-management"
+      ],
+      "path": "plugins/asana-projects",
+      "archive_url": "",
+      "checksum": "sha256:4361ee45d57cf6968e6e7579bb8c2593c90332f5f42baf510e716247560b64d3",
+      "provides": {
+        "native_tools": 2,
+        "mcp_servers": 0,
+        "channels": 0,
+        "skills": 1
+      },
+      "permissions": [
+        "network",
+        "account"
+      ],
+      "min_row_bot_version": "0.0.0",
+      "changelog_url": ""
+    },
+    {
       "id": "hacker-news",
       "name": "Hacker News Reader",
       "version": "1.0.0",

@@ -1,0 +1,66 @@
+{
+  "schema_version": 2,
+  "id": "asana-projects",
+  "name": "Asana Projects",
+  "version": "0.2.0",
+  "min_row_bot_version": "0.0.0",
+  "author": {"name": "Venky1209", "github": "Venky1209"},
+  "description": "Browse Asana workspaces, projects, and tasks, summarize blockers, and create tasks with approval.",
+  "long_description": "Connect Row-Bot to Asana with a Personal Access Token. Read side: list workspaces and projects, list and search tasks, view one task's detail, and summarize a project's open blockers by due status and assignment. Write side: create a task inside a project. The create tool is approval-gated, so Row-Bot asks the user to confirm before anything is written to Asana. Reads never require approval.",
+  "icon": "checklist",
+  "license": "Apache-2.0",
+  "tags": ["asana", "projects", "tasks", "productivity", "project-management"],
+  "homepage": "https://github.com/siddsachar/row-bot-plugins",
+  "repository": "https://github.com/siddsachar/row-bot-plugins",
+  "provides": {
+    "native_tools": [
+      {"id": "asana_projects", "entrypoint": "plugin_main.py"},
+      {"id": "asana_create_task", "entrypoint": "plugin_main.py"}
+    ],
+    "mcp_servers": [],
+    "channels": [],
+    "skills": [
+      {
+        "id": "asana_projects",
+        "path": "skills/asana_projects/SKILL.md"
+      }
+    ]
+  },
+  "permissions": ["network", "account"],
+  "settings": {
+    "default_count": {
+      "type": "number",
+      "label": "Default number of results",
+      "description": "How many workspaces, projects, or tasks to return per list or search (1-30).",
+      "default": 10,
+      "required": false
+    },
+    "default_workspace": {
+      "type": "text",
+      "label": "Default workspace GID",
+      "description": "Optional Asana workspace GID used for task search and as the default when listing projects. Run 'list_workspaces' to find it.",
+      "required": false
+    }
+  },
+  "secrets": {
+    "access_token": {
+      "type": "secret",
+      "label": "Asana Personal Access Token",
+      "description": "A Personal Access Token from Asana (Settings -> Apps -> Developer apps -> Personal access tokens).",
+      "required": true
+    }
+  },
+  "auth": {
+    "account": {
+      "type": "bearer_token",
+      "secret": "access_token"
+    }
+  },
+  "health_checks": [
+    {
+      "id": "access_token_present",
+      "type": "required_secrets",
+      "secrets": ["access_token"]
+    }
+  ]
+}
