@@ -99,6 +99,38 @@
       "changelog_url": ""
     },
     {
+      "id": "memcode-memory",
+      "name": "Memcode Memory",
+      "version": "0.1.0",
+      "description": "Give Row-Bot opt-in long-term memory backed by the Memcode personal v2 API.",
+      "author": {
+        "name": "Vivek Gupta",
+        "github": "vivekgupta-memcode"
+      },
+      "tags": [
+        "memory",
+        "memcode",
+        "search",
+        "knowledge",
+        "productivity"
+      ],
+      "path": "plugins/memcode-memory",
+      "archive_url": "",
+      "checksum": "sha256:e7d04edae02199fd0a8c3aa27b83a7ddeb77667b61a3ac1ffd18b9c2cdab030b",
+      "provides": {
+        "native_tools": 5,
+        "mcp_servers": 0,
+        "channels": 0,
+        "skills": 1
+      },
+      "permissions": [
+        "network",
+        "account"
+      ],
+      "min_row_bot_version": "0.0.0",
+      "changelog_url": ""
+    },
+    {
       "id": "microsoft-teams-channel",
       "name": "Microsoft Teams Channel",
       "version": "1.0.0",

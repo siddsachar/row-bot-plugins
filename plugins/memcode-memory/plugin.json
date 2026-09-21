@@ -1,0 +1,70 @@
+{
+  "schema_version": 2,
+  "id": "memcode-memory",
+  "name": "Memcode Memory",
+  "version": "0.1.0",
+  "min_row_bot_version": "0.0.0",
+  "author": {"name": "Vivek Gupta", "github": "vivekgupta-memcode"},
+  "description": "Give Row-Bot opt-in long-term memory backed by the Memcode personal v2 API.",
+  "long_description": "Search and inspect memories for the authenticated Memcode user. Retrieval is approval-gated because Memcode may learn Recall Bond relationships, and ingestion is approval-gated because it may change durable memories. Ingestion returns a durable receipt that can be polled. The plugin never accepts a caller-supplied user id; identity comes from the configured Memcode credential.",
+  "icon": "brain",
+  "license": "MIT",
+  "tags": ["memory", "memcode", "search", "knowledge", "productivity"],
+  "homepage": "https://memcode.in",
+  "repository": "https://github.com/siddsachar/row-bot-plugins",
+  "provides": {
+    "native_tools": [
+      {"id": "memcode_search", "entrypoint": "plugin_main.py"},
+      {"id": "memcode_retrieve", "entrypoint": "plugin_main.py"},
+      {"id": "memcode_list", "entrypoint": "plugin_main.py"},
+      {"id": "memcode_remember", "entrypoint": "plugin_main.py"},
+      {"id": "memcode_ingest_status", "entrypoint": "plugin_main.py"}
+    ],
+    "mcp_servers": [],
+    "channels": [],
+    "skills": [
+      {
+        "id": "memcode_memory",
+        "path": "skills/memcode_memory/SKILL.md"
+      }
+    ]
+  },
+  "permissions": ["network", "account"],
+  "settings": {
+    "base_url": {
+      "type": "url",
+      "label": "Memcode API URL",
+      "description": "Base URL for the Memcode Memory API.",
+      "default": "https://memory.memcode.in",
+      "required": true
+    },
+    "default_count": {
+      "type": "number",
+      "label": "Default result count",
+      "description": "Default number of search, retrieval, or list results (1-25).",
+      "default": 5,
+      "required": false
+    }
+  },
+  "secrets": {
+    "api_key": {
+      "type": "secret",
+      "label": "Memcode API key",
+      "description": "Integration-issued personal Memcode credential. Create it with Row-Bot selected in the Memcode dashboard; it determines which user's memories are accessible.",
+      "required": true
+    }
+  },
+  "auth": {
+    "account": {
+      "type": "bearer_token",
+      "secret": "api_key"
+    }
+  },
+  "health_checks": [
+    {
+      "id": "api_key_present",
+      "type": "required_secrets",
+      "secrets": ["api_key"]
+    }
+  ]
+}
