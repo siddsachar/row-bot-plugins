@@ -30,6 +30,11 @@ _NO_WORKSPACE_MSG = (
     "or pass one explicitly. Run 'list_workspaces' to find it."
 )
 
+_INVALID_WORKSPACE_MSG = (
+    "Default workspace GID must contain digits only. "
+    "Run 'list_workspaces' to find it."
+)
+
 # opt_fields requested per read, kept minimal and non-sensitive.
 # Asana tasks may carry due_on (a floating calendar date) OR due_at (a UTC
 # timestamp for time-specific deadlines) — request both.
@@ -53,7 +58,7 @@ _HELP_TEXT = (
     "  list_projects [<workspace_gid>|default] [count]  - omit or 'default' uses "
     "the default workspace\n"
     "  list_tasks <project_gid> [count]\n"
-    "  search_tasks <query> [count]           - searches the default workspace "
+    "  search_tasks <query> [count=N]         - searches the default workspace "
     "(names only)\n"
     "  task <task_gid>\n"
     "  blockers <project_gid>                 - summarize open tasks by due status\n"
@@ -74,6 +79,16 @@ def _split_trailing_count(text: str, default_count: int) -> tuple[str, int]:
     tokens = (text or "").rsplit(None, 1)
     if len(tokens) == 2 and tokens[1].isdigit():
         return tokens[0].strip(), _parse_int(tokens[1], default_count)
+    return (text or "").strip(), default_count
+
+
+def _split_search_count(text: str, default_count: int) -> tuple[str, int]:
+    """Split an explicit ``count=N`` suffix without consuming numeric search terms."""
+    tokens = (text or "").rsplit(None, 1)
+    if len(tokens) == 2 and tokens[1].lower().startswith("count="):
+        raw_count = tokens[1].split("=", 1)[1]
+        if raw_count.isdigit():
+            return tokens[0].strip(), _parse_int(raw_count, default_count)
     return (text or "").strip(), default_count
 
 
@@ -191,7 +206,7 @@ def _parse_query(query: str, default_count: int) -> tuple[str, dict[str, Any]]:
     if action == "search_tasks":
         if not rest:
             return "error", {"message": "Please provide a search query. Usage: search_tasks <query>"}
-        text, count = _split_trailing_count(rest, default_count)
+        text, count = _split_search_count(rest, default_count)
         return "search_tasks", {"query": text, "count": count}
 
     if action == "task":
@@ -214,7 +229,7 @@ def _parse_query(query: str, default_count: int) -> tuple[str, dict[str, Any]]:
         return "help", {}
 
     # Bare query → search tasks in the default workspace.
-    text, count = _split_trailing_count(query, default_count)
+    text, count = _split_search_count(query, default_count)
     return "search_tasks", {"query": text, "count": count}
 
 
@@ -572,7 +587,7 @@ class AsanaProjectsTool(_AsanaTool):
         return (
             "Read Asana workspaces, projects, and tasks (read-only, no approval needed). "
             "Commands: list_workspaces [count], list_projects [<workspace_gid>|default] [count], "
-            "list_tasks <project_gid> [count], search_tasks <query> [count], task <task_gid>, "
+            "list_tasks <project_gid> [count], search_tasks <query> [count=N], task <task_gid>, "
             "blockers <project_gid>. A bare query searches tasks in the default workspace."
         )
 
@@ -590,6 +605,8 @@ class AsanaProjectsTool(_AsanaTool):
                 workspace = params["workspace"] or self._default_workspace()
                 if not workspace:
                     return _NO_WORKSPACE_MSG
+                if not _is_gid(workspace):
+                    return _INVALID_WORKSPACE_MSG
                 return _run_list_projects(workspace, params["count"], token)
             if action == "list_tasks":
                 return _run_list_tasks(params["project"], params["count"], token)
@@ -597,6 +614,8 @@ class AsanaProjectsTool(_AsanaTool):
                 workspace = self._default_workspace()
                 if not workspace:
                     return _NO_WORKSPACE_MSG
+                if not _is_gid(workspace):
+                    return _INVALID_WORKSPACE_MSG
                 return _run_search_tasks(workspace, params["query"], params["count"], token)
             if action == "task":
                 return _run_task_detail(params["task"], token)

@@ -21,7 +21,7 @@
       ],
       "path": "plugins/asana-projects",
       "archive_url": "",
-      "checksum": "sha256:6a8f0ac66f7384dc1d54f6f28bcdcec9e57d392a3d042e7255258bc8366412ca",
+      "checksum": "sha256:4361ee45d57cf6968e6e7579bb8c2593c90332f5f42baf510e716247560b64d3",
       "provides": {
         "native_tools": 2,
         "mcp_servers": 0,

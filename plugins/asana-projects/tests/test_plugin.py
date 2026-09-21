@@ -135,10 +135,16 @@ class TestQueryParser(unittest.TestCase):
         self.assertEqual(params["count"], 15)
 
     def test_search_tasks(self):
-        action, params = self.module._parse_query("search_tasks onboarding 3", 10)
+        action, params = self.module._parse_query("search_tasks onboarding count=3", 10)
         self.assertEqual(action, "search_tasks")
         self.assertEqual(params["query"], "onboarding")
         self.assertEqual(params["count"], 3)
+
+    def test_search_preserves_numeric_suffix(self):
+        action, params = self.module._parse_query("search_tasks roadmap 2026", 10)
+        self.assertEqual(action, "search_tasks")
+        self.assertEqual(params["query"], "roadmap 2026")
+        self.assertEqual(params["count"], 10)
 
     def test_task_detail_valid_and_invalid(self):
         self.assertEqual(self.module._parse_query("task 777", 10)[1]["task"], "777")
@@ -153,6 +159,10 @@ class TestQueryParser(unittest.TestCase):
         action, params = self.module._parse_query("quarterly review", 10)
         self.assertEqual(action, "search_tasks")
         self.assertEqual(params["query"], "quarterly review")
+
+        action, params = self.module._parse_query("roadmap 2026", 10)
+        self.assertEqual(action, "search_tasks")
+        self.assertEqual(params["query"], "roadmap 2026")
 
     def test_count_clamping(self):
         self.assertEqual(self.module._parse_query("list_tasks 5 100", 10)[1]["count"], 30)
@@ -445,6 +455,14 @@ class TestReadExecute(unittest.TestCase):
             "default_count": 10,
         }.get(key, default)
         self.assertIn("No workspace GID", self.tool.execute("search_tasks x"))
+
+    def test_invalid_default_workspace_is_rejected(self):
+        self.api.get_config.side_effect = lambda key, default=None: {
+            "default_count": 10,
+            "default_workspace": "not-a-gid",
+        }.get(key, default)
+        self.assertIn("digits only", self.tool.execute("list_projects"))
+        self.assertIn("digits only", self.tool.execute("search_tasks x"))
 
     def test_execute_handles_http_401(self):
         with patch.object(self.module, "_run_list_workspaces", side_effect=_http_error(401)):

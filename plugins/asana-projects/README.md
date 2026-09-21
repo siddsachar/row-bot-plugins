@@ -39,6 +39,9 @@ create tasks with approval.
   and shown. Classification resolves each to a **local** calendar date and
   compares against the local "today", so a time-specific deadline is never
   mis-counted as "no due date."
+- **`search_tasks <query> [count=N]`** — use an explicit `count=N` suffix when
+  overriding the result count. A trailing number remains part of the search,
+  so `search_tasks roadmap 2026` searches for the full phrase.
 
 ## Approval Model
 
@@ -114,7 +117,7 @@ Use a **throwaway Asana workspace / test project** and a test-account PAT:
 2. `list_projects <workspace_gid>` → returns projects.
 3. `list_tasks <project_gid>` and `blockers <project_gid>` → return tasks / a
    summary.
-4. `search_tasks <query>` → returns matching tasks.
+4. `search_tasks <query> [count=N]` → returns matching tasks.
 5. `asana_create_task <project_gid> Test task` → Row-Bot shows an approval
    prompt; on confirm, the task appears in Asana.
 
